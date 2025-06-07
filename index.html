@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Escaperoom: De Code van Nederland</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: white;
+      color: #111;
+      padding: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    .room {
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      padding: 8px;
+      margin-top: 10px;
+      margin-right: 10px;
+      width: 200px;
+    }
+    button {
+      padding: 8px 12px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .correct {
+      color: green;
+      font-weight: bold;
+    }
+    .wrong {
+      color: red;
+    }
+    #timer {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    .hint-button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      margin-left: 10px;
+    }
+    .hint-confirm, .hint-text {
+      display: none;
+      margin-top: 5px;
+    }
+    #endScreen {
+      display: none;
+      text-align: center;
+    }
+    #endScreen h2 {
+      font-size: 2em;
+      margin-top: 40px;
+    }
+    #lyrics {
+      font-size: 1.2em;
+      margin-top: 20px;
+      font-style: italic;
+    }
+    iframe {
+      margin-top: 20px;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧩 Escaperoom: De Code van Nederland</h1>
+
+  <div id="startScreen">
+    <p>Klik op start om de escaperoom te beginnen. Je hebt 30 minuten om alle vragen op te lossen!</p>
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <div id="game" class="hidden">
+    <p id="timer">⏳ Tijd over: <span id="time">30:00</span></p>
+    <div id="questionContainer"></div>
+  </div>
+
+  <div id="endScreen">
+    <h2>🎉 Je hebt de code gekraakt!</h2>
+    <p>Gefeliciteerd, je hebt alle raadsels opgelost binnen de tijd!</p>
+    <div id="lyrics">
+      And I'd give up forever to touch you<br />
+      'Cause I know that you feel me somehow<br />
+      You're the closest to heaven that I'll ever be<br />
+      And I don't wanna go home right now
+    </div>
+    <iframe width="560" height="315"
+      src="https://www.youtube.com/embed/gxQdoJqTRJA?autoplay=1&loop=1&playlist=gxQdoJqTRJA"
+      title="Instrumental Iris"
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <script>
+    const questions = [
+      { q: "Wat is de hoofdstad van Nederland?", a: "amsterdam", h: "Het is bekend om grachten en het Rijksmuseum." },
+      { q: "Welke kleur krijg je als je geel en blauw mengt?", a: "groen", h: "Denk aan de kleuren van gras en zon." },
+      { q: "Hoeveel dagen heeft een schrikkeljaar?", a: "366", h: "Normaal jaar + 1." },
+      { q: "Wat is het grootste Waddeneiland van Nederland?", a: "texel", h: "Het begint met een T." },
+      { q: "Wat is de langste rivier die door Nederland stroomt?", a: "rijn", h: "Het is ook een bekende Duitse rivier." },
+      { q: "Welke kleur heeft een Nederlandse politieauto meestal?", a: "wit", h: "De kleur van sneeuw." },
+      { q: "Wat voor soort boom is een eik?", a: "loofboom", h: "Geen naalden." },
+      { q: "Welke provincie ligt het meest noordelijk?", a: "groningen", h: "Bekend van de Martinitoren." },
+      { q: "Hoeveel provincies heeft Nederland?", a: "12", h: "Tussen 10 en 15." },
+      { q: "Welke Nederlandse stad staat bekend om zijn kaasmarkt?", a: "alkmaar", h: "Begint met een A en eindigt op -maar." },
+      { q: "Welke zee grenst aan Nederland?", a: "noordzee", h: "Boven Nederland." },
+      { q: "Wat is de nationale bloem van Nederland?", a: "tulp", h: "Heel bekend in de lente." },
+      { q: "Wie schilderde de Nachtwacht?", a: "rembrandt", h: "Zijn voornaam is Rembrandt." },
+      { q: "Wat is 7 x 7?", a: "49", h: "Een kwadraat." },
+      { q: "Wat is de hoofdstad van Limburg?", a: "maastricht", h: "Bekend van het verdrag van de EU." },
+      { q: "Welke kleur zit NIET in de Nederlandse vlag?", a: "groen", h: "Denk aan rood-wit-blauw." },
+      { q: "Welke feestdag valt op 5 december?", a: "sinterklaas", h: "De goedheiligman." },
+      { q: "Hoe heet het grootste meer van Nederland?", a: "ijsselmeer", h: "Begint met IJ." },
+      { q: "Wat is de naam van het koningshuis?", a: "oranje", h: "De nationale kleur." },
+      { q: "Wat is de hoofdstad van Friesland?", a: "leeuwarden", h: "Begint met een dier." }
+    ];
+
+    let current = 0;
+    let timerInterval;
+
+    function startGame() {
+      document.getElementById("startScreen").classList.add("hidden");
+      document.getElementById("game").classList.remove("hidden");
+      showQuestion();
+      startTimer(1800); // 30 minuten
+    }
+
+    function showQuestion() {
+      if (current >= questions.length) {
+        endGame();
+        return;
+      }
+      const q = questions[current];
+      const container = document.getElementById("questionContainer");
+      container.innerHTML = `
+        <div class="room">
+          <p><strong>Vraag ${current + 1}:</strong> ${q.q}</p>
+          <input type="text" id="answer" placeholder="Typ je antwoord..." autocomplete="off" />
+          <button onclick="checkAnswer()">Controleer</button>
+          <button class="hint-button" onclick="showHintConfirm()">Hint</button>
+          <div class="hint-confirm">
+            Weet je het zeker?
+            <button onclick="showHint()">Ja</button>
+            <button onclick="cancelHint()">Nee</button>
+          </div>
+          <div class="hint-text">${q.h}</div>
+          <p id="feedback"></p>
+        </div>`;
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById("answer").value.trim().toLowerCase();
+      if (input === questions[current].a) {
+        current++;
+        showQuestion();
+      } else {
+        const feedback = document.getElementById("feedback");
+        feedback.textContent = "Helaas, dat is niet correct.";
+        feedback.className = "wrong";
+      }
+    }
+
+    function showHintConfirm() {
+      document.querySelector(".hint-confirm").style.display = "block";
+    }
+
+    function cancelHint() {
+      document.querySelector(".hint-confirm").style.display = "none";
+    }
+
+    function showHint() {
+      document.querySelector(".hint-text").style.display = "block";
+      document.querySelector(".hint-confirm").style.display = "none";
+    }
+
+    function startTimer(duration) {
+      let timer = duration, minutes, seconds;
+      const timeDisplay = document.getElementById("time");
+      timerInterval = setInterval(() => {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        timeDisplay.textContent = minutes + ":" + seconds;
+
+        if (--timer < 0) {
+          clearInterval(timerInterval);
+          document.getElementById("game").innerHTML = "<h2>⏰ Tijd is om! Je hebt het helaas niet gehaald.</h2>";
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(timerInterval);
+      document.getElementById("game").classList.add("hidden");
+      document.getElementById("endScreen").style.display = "block";
+    }
+  </script>
+</body>
+</html>
